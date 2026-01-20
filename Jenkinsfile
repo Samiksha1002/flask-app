@@ -12,11 +12,11 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
+        /*stage('Checkout') {
             steps {
                 git 'https://github.com/Samiksha1002/flask-app.git'
             }
-        }
+        }*/
 
         stage('Test') {
             steps {
