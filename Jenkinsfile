@@ -7,13 +7,14 @@ pipeline {
         IMAGE_NAME = "sam1002/flask-cicd:latest"
         APP_NAME = "flask-cicd-app"
         APP_PORT = "5000"
+        DOCKERCREDENTIALS = credentials("dockerhub")
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/<your-username>/flask-cicd-app.git'
+                git 'https://github.com/Samiksha1002/flask-app.git'
             }
         }
 
@@ -23,13 +24,29 @@ pipeline {
             }
         }
 
-        stage('Build & Push Image') {
+        stage("Docker Image")
+        {
             steps {
-                sh '''
-                docker build -t $IMAGE_NAME .
-                docker push $IMAGE_NAME
-                '''
+                sh """
+                    echo "========Building the Docker Image ============"
+                    echo "IMAGE Name is - ${IMAGE_NAME}"
+                    docker build -t $IMAGE_NAME:"${env.BUILD_NUMBER}" .
+                    echo "====== Building Image Completed ====="
+                    """      
             }
+        }
+
+        stage("Docker Login and push the image")
+        {
+            steps{
+                sh """
+                    echo "======== Login the Docker Hub ============"
+                        echo "Docker credentials - ${DOCKERCREDENTIALS}"
+                        docker login -u $DOCKERCREDENTIALS_USR -p $DOCKERCREDENTIALS_PSW
+                        docker push $IMAGE_NAME:"${env.BUILD_NUMBER}"
+                    echo "====== Login successful====="
+                    """      
+                } 
         }
 
         stage('Deploy on AWS EC2') {
@@ -42,7 +59,7 @@ pipeline {
                   docker run -d \
                     --name $APP_NAME \
                     -p $APP_PORT:$APP_PORT \
-                    $IMAGE_NAME
+                    $IMAGE_NAME:"${env.BUILD_NUMBER}"
                 "
                 '''
             }
