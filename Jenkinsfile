@@ -4,7 +4,7 @@ pipeline {
     environment {
         EC2_USER = "ubuntu"
         EC2_HOST = "3.110.133.193"       /*public-ip*/
-        IMAGE_NAME = "sam1002/flask-cicd:latest"
+        IMAGE_NAME = "sam1002/flask-cicd"
         APP_NAME = "flask-cicd-app"
         APP_PORT = "5000"
         DOCKERCREDENTIALS = credentials("dockerhub")
