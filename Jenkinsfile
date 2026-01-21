@@ -61,17 +61,19 @@ pipeline {
 
         stage('Deploy on AWS EC2') {
             steps {
+            sshagent(credentials: ['ec2-ssh-key']) {
                 sh '''
-                ssh $EC2_USER@$EC2_HOST "
-                  docker pull $IMAGE_NAME &&
+                ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
+                  docker pull $IMAGE_NAME$:{env.BUILD_NUMBER} &&
                   docker stop $APP_NAME || true &&
                   docker rm $APP_NAME || true &&
                   docker run -d \
                     --name $APP_NAME \
                     -p $APP_PORT:$APP_PORT \
-                    $IMAGE_NAME:"${env.BUILD_NUMBER}"
+                    $IMAGE_NAME:${env.BUILD_NUMBER}
                 "
                 '''
+                }
             }
         }
     }
