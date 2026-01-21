@@ -12,15 +12,16 @@ pipeline {
 
     stages {
 
-        /*stage('Checkout') {
+        stage('Checkout') {
             steps {
                 git 'https://github.com/Samiksha1002/flask-app.git'
             }
-        }*/
+        }
 
         stage('Test') {
             steps {
                 sh '''
+                echo "======== started testing ============"
                 python3 -m venv venv
                 . venv/bin/activate
         
@@ -28,6 +29,7 @@ pipeline {
                 pip install -r requirements.txt
         
                 pytest
+                echo "======== tested successfully ============"
                 '''
             }
         }
@@ -40,7 +42,7 @@ pipeline {
                 sh """
                     echo "========Building the Docker Image ============"
                     echo "IMAGE Name is - ${IMAGE_NAME}"
-                    docker build -t $IMAGE_NAME:"${env.BUILD_NUMBER}" .
+                    docker build -t $IMAGE_NAME:$BUILD_NUMBER .
                     echo "====== Building Image Completed ====="
                     """      
             }
@@ -53,28 +55,34 @@ pipeline {
                     echo "======== Login the Docker Hub ============"
                         echo "Docker credentials - ${DOCKERCREDENTIALS}"
                         docker login -u $DOCKERCREDENTIALS_USR -p $DOCKERCREDENTIALS_PSW
-                        docker push $IMAGE_NAME:"${env.BUILD_NUMBER}"
+                        docker push $IMAGE_NAME:$BUILD_NUMBER
                     echo "====== Login successful====="
                     """      
                 } 
         }
 
         stage('Deploy on AWS EC2') {
-            steps {
+    steps {
+        script {
             sshagent(credentials: ['ec2-ssh-key']) {
                 sh '''
+                echo "======== verifying the credentials============"
                 ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
-                  docker pull $IMAGE_NAME$:{env.BUILD_NUMBER} &&
+                echo "======== deploying on ec2 ============"
+                  docker pull $IMAGE_NAME:$BUILD_NUMBER &&
                   docker stop $APP_NAME || true &&
                   docker rm $APP_NAME || true &&
                   docker run -d \
                     --name $APP_NAME \
                     -p $APP_PORT:$APP_PORT \
-                    $IMAGE_NAME:${env.BUILD_NUMBER}
+                    $IMAGE_NAME:$BUILD_NUMBER
+                    echo "======== deployed successfully ============"
                 "
                 '''
-                }
             }
         }
+    }
+}
+
     }
 }
